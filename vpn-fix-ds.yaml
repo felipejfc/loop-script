@@ -1,0 +1,32 @@
+kind: DaemonSet
+apiVersion: extensions/v1beta1
+metadata:
+  name: vpn-fix
+  namespace: kube-system
+  labels:
+    app: vpn-fix
+spec:
+  template:
+    metadata:
+      labels:
+        app: vpn-fix
+    spec:
+      hostPID: true
+      containers:
+        - name: vpn-fix
+          image: loop-script:latest
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true
+          env:
+          - name: LOOP_SCRIPT
+            value: |
+              #! /bin/bash
+              set -o pipefail
+              set -o nounset
+              iptables -t nat -C POSTROUTING ! -d 10.4.0.0/14 -o eth0 -j MASQUERADE
+              if [ $? -ne 0 ]; then
+                echo "adding iptables rule"
+                echo "iptables -t nat -A POSTROUTING ! -d 10.4.0.0/14 -o eth0 -j MASQUERADE"
+                iptables -t nat -A POSTROUTING ! -d 10.4.0.0/14 -o eth0 -j MASQUERADE
+              fi
